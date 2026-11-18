@@ -9,6 +9,7 @@
 #include "Devices.h"
 #include "Scripting.h"
 #include "OppDevices.h"
+#include "ExternalEvents.h"
 #include "Tats.h"
 #include "MGEF_Controller.h"
 #include "Translation.h"
@@ -194,7 +195,7 @@ namespace DCURSES {
                 PlayerMessage(Translator(Translation::ItemTattooCharm));
             }
             else if (equipmentForm == arouaslPotion) {
-                ScriptingManager().ModifyArousal(player, -1000);
+                ScriptingManager().ResetArousal(player);
                 ScriptingManager().OSL_ModifyLibido(player, -settings->arousalPotionLibido);
 
                 PlayerMessage(Translator(Translation::ItemArousalPotion));
@@ -406,6 +407,12 @@ namespace DCURSES {
                     return RE::BSEventNotifyControl::kContinue;
                 }
             }
+            else if (event == "registerevent") {
+                RegisterExternalEvent(modEvent->strArg.c_str(), modEvent->numArg, modEvent->sender);
+            }
+            else if (event == "unregisterevent") {
+                UnregisterExternalEvent(modEvent->strArg.c_str());
+            }
             else if (event == "setlewdmark") {
                 auto lewdMarkCounters = Serialized::GetLewdMarkCounters();
                 MARK mark = MARK::TAT_NONE;
@@ -516,6 +523,8 @@ namespace DCURSES {
             }
             else if (event == "removeallrestraints") {
                 RemoveAllRestraints(player);
+            }
+            else if (event == "requestevents" || event == "runexternalevent" || event == "eventtriggered") {
             }
             else if (event == "removealloppressive") {
                 RE::TESObjectARMO* summoner_collar = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(SUMMONER_COLLAR, "Devious Curses.esp");

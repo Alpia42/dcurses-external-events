@@ -152,16 +152,17 @@ namespace DCURSES {
 
 		std::ifstream i(EXCLUSIONS_FILE);
 
+		std::vector<std::string> result;
 		try {
 			i >> j;
+			result = j.get<std::vector<std::string>>();
 		}
-		catch (...) {
-			log::error("Exclusions file has garbled data.");
+		catch (const std::exception& e) {
+			log::warn("Exclusions file {} has garbled data or is not a list of strings: {}", EXCLUSIONS_FILE, e.what());
 			return std::vector<std::string>();
 		}
 
-
-		return j.get<std::vector<std::string>>();
+		return result;
 	}
 
 	std::vector<std::string> GetModExclusions() {
@@ -171,16 +172,17 @@ namespace DCURSES {
 
 		std::ifstream i(MOD_EXCLUSIONS_FILE);
 
+		std::vector<std::string> result;
 		try {
 			i >> j;
+			result = j.get<std::vector<std::string>>();
 		}
-		catch (...) {
-			log::error("Exclusions file has garbled data.");
+		catch (const std::exception& e) {
+			log::warn("Exclusions file {} has garbled data or is not a list of strings: {}", MOD_EXCLUSIONS_FILE, e.what());
 			return std::vector<std::string>();
 		}
 
-
-		return j.get<std::vector<std::string>>();
+		return result;
 	}
 
 	bool ProcessDevice(DeviceData dev, std::vector<std::string> exclusions, std::vector<RE::TESFile*> mod_exclusions) {
@@ -1022,7 +1024,7 @@ namespace DCURSES {
 				if (keyword == "zad_DeviousHarness") {
 					lists.push_back(std::pair(&devices->harnessesOpen, settings->slaveHarnessWeight));
 					lists.push_back(std::pair(&devices->corsetsNoBelt, settings->corsetWeight));
-					if (std::find(skipList.begin(), skipList.end(), "zad_DeviousBelt") != skipList.end()) { // No Belt
+					if (std::find(skipList.begin(), skipList.end(), "zad_DeviousBelt") == skipList.end()) { // No Belt
 						lists.push_back(std::pair(&devices->harnesses, settings->chastityHarnessWeight));
 						lists.push_back(std::pair(&devices->corsetsBelt, settings->corsetWeight));
 					}

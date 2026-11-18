@@ -20,9 +20,11 @@ add stuff
 #include "DebugMode.h"
 #include "MGEF_Controller.h"
 #include "Events.h"
+#include "ExternalEvents.h"
 #include "Themes.h"
 #include "Translation.h"
 #include "Consequences.h"
+#include "Contraptions.h"
 
 #include "Quest/QuestSettings.h"
 #include "Quest/QuestEvents.h"
@@ -73,6 +75,8 @@ namespace DCURSES {
 
         std::thread{ [] {
             bool shouldSkipNextLoop = false;
+            int contraptionSeconds = 0;
+            int zadAnimatingSeconds = 0;
             while (true) {
                 std::this_thread::sleep_for(1000ms);
                 
@@ -116,14 +120,36 @@ namespace DCURSES {
 
                 RE::TESFaction* SexlabAnimatingFaction = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(0x00E50F, "SexLab.esm");
                 RE::TESFaction* ZadAnimatingFaction = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(0x029567, "Devious Devices - Integration.esm");
-                RE::TESFaction* zadcNGInContraptionFaction = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(0x097E0A, "Devious Devices - Contraptions.esm");
+                RE::TESFaction* zadcNGInContraptionFaction = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(ZADC_IN_CONTRAPTION_FACTION, "Devious Devices - Contraptions.esm");
 
-                if (player->IsInFaction(SexlabAnimatingFaction)) {
+                bool inSexLab = player->IsInFaction(SexlabAnimatingFaction);
+                bool inZadAnimating = player->IsInFaction(ZadAnimatingFaction);
+                bool inContraption = player->IsInFaction(zadcNGInContraptionFaction);
+
+                if (inSexLab) {
                     Serialized::GetCounters()->clock_lastSex = 0;
                     Serialized::GetCounters()->SinceLastSex = 0;
                 }
 
-                bool isAnimating = player->IsInFaction(SexlabAnimatingFaction) || player->IsInFaction(ZadAnimatingFaction) || player->IsInFaction(zadcNGInContraptionFaction);
+                // These factions pause every refresh below, so one left on by mistake stops the mod for the rest of the save.
+                if (inContraption) {
+                    if (++contraptionSeconds % 10 == 0) {
+                        SKSE::GetTaskInterface()->AddTask([] { ClearStaleContraptionFaction(); });
+                    }
+                }
+                else {
+                    contraptionSeconds = 0;
+                }
+                if (inZadAnimating && !inSexLab) {
+                    if (++zadAnimatingSeconds == 300) {
+                        log::warn("Player has been in zadAnimatingFaction for 5 minutes, which pauses this mod. If no Devious Devices animation is playing, it is stuck: player.removefromfaction {:08X}", ZadAnimatingFaction->GetFormID());
+                    }
+                }
+                else {
+                    zadAnimatingSeconds = 0;
+                }
+
+                bool isAnimating = inSexLab || inZadAnimating || inContraption;
 
                 if (!isAnimating && !isInNonPausedMenu && !shouldSkipNextLoop) {
                     auto c1 = std::chrono::high_resolution_clock::now();
@@ -182,11 +208,46 @@ namespace DCURSES {
         return GetOppDeviceMask();
     }
 
+    void P_RegisterExternalEvent(RE::StaticFunctionTag*, RE::BSFixedString id, float weight) {
+        RegisterExternalEvent(std::string(id.c_str()), weight);
+    }
+
+    void P_UnregisterExternalEvent(RE::StaticFunctionTag*, RE::BSFixedString id) {
+        UnregisterExternalEvent(std::string(id.c_str()));
+    }
+
+    float P_GetExternalEventWeight(RE::StaticFunctionTag*, RE::BSFixedString id) {
+        return static_cast<float>(GetExternalEventWeight(std::string(id.c_str())));
+    }
+
+    int P_GetExternalEventCount(RE::StaticFunctionTag*) {
+        return GetExternalEventCount();
+    }
+
+    RE::BSFixedString P_GetExternalEventId(RE::StaticFunctionTag*, int index) {
+        return GetExternalEventAt(index).id;
+    }
+
+    RE::BSFixedString P_GetExternalEventName(RE::StaticFunctionTag*, int index) {
+        return GetExternalEventAt(index).displayName;
+    }
+
+    float P_GetExternalEventWeightAt(RE::StaticFunctionTag*, int index) {
+        return static_cast<float>(GetExternalEventAt(index).weight);
+    }
+
     bool PapyrusFunctions(RE::BSScript::IVirtualMachine* ivm) {
         ivm->RegisterFunction("GetRandomEquipableDevice", "DCursesLib", P_GetRandomEquipableDevice);
+        ivm->RegisterFunction("RegisterExternalEvent", "DCursesLib", P_RegisterExternalEvent);
+        ivm->RegisterFunction("UnregisterExternalEvent", "DCursesLib", P_UnregisterExternalEvent);
+        ivm->RegisterFunction("GetExternalEventWeight", "DCursesLib", P_GetExternalEventWeight);
         ivm->RegisterFunction("NumDevicesVisible", "DCursesLib", P_numDevicesVisible);
         ivm->RegisterFunction("NumDevicesEquipped", "DCursesLib", P_numDevicesEquipped);
         ivm->RegisterFunction("WearingOppressiveDevice", "DCurses_MCM", P_WearingOppressiveDevice);
+        ivm->RegisterFunction("GetExternalEventCount", "DCurses_MCM", P_GetExternalEventCount);
+        ivm->RegisterFunction("GetExternalEventId", "DCurses_MCM", P_GetExternalEventId);
+        ivm->RegisterFunction("GetExternalEventName", "DCurses_MCM", P_GetExternalEventName);
+        ivm->RegisterFunction("GetExternalEventWeightAt", "DCurses_MCM", P_GetExternalEventWeightAt);
         PapyrusFunctionsSettigns(ivm);
         Quest::PapyrusFunctionsSettigns(ivm);
         PapyrusFunctionsSex(ivm);
@@ -313,6 +374,7 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
             RecalculateDeviceLists();
             MCMSetHelpPageOptions();
             ScriptingManager().MCMRegisterModEvents();
+            ClearExternalEvents();
 
             Serialized::GetCounters()->clock_SexTimeout -= 2;
            

@@ -23,6 +23,8 @@ namespace DCURSES {
 
     bool CheckOSL();
 
+    bool CheckSLOAroused();
+
     class ScriptIntent {
     public:
         std::string script_name;
@@ -150,6 +152,8 @@ namespace DCURSES {
         void WithArousal(RE::Actor* actor, std::function<void(float)> func);
 
         void ModifyArousal(RE::Actor* actor, float arousal);
+
+        void ResetArousal(RE::Actor* actor);
 
         void Generic_ModifyArousal(RE::Actor* actor, int arousal);
 

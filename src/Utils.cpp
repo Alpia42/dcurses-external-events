@@ -78,14 +78,12 @@ namespace DCURSES::Util {
 	}
 
 	std::string trim(const std::string in) {
-		size_t lindex = 0;
-		size_t rindex = in.size() - 1;
-		while (std::isspace(in[lindex])) {
-			lindex += 1;
+		static constexpr auto whitespace = " \t\n\v\f\r";
+		size_t lindex = in.find_first_not_of(whitespace);
+		if (lindex == std::string::npos) {
+			return "";
 		}
-		while (std::isspace(in[rindex])) {
-			rindex -= 1;
-		}
+		size_t rindex = in.find_last_not_of(whitespace);
 		return in.substr(lindex, rindex - lindex + 1);
 	}
 
@@ -259,7 +257,8 @@ namespace DCURSES::Util {
 							if (heading < 65.0f) {
 								float distance = actorPos.GetDistance(targetPos);
 
-								if (distance < radius && heading < 65.0f) {
+								// A negative radius (the default) means no distance limit; line of sight and detection still apply.
+								if ((radius < 0 || distance < radius) && heading < 65.0f) {
 									int detection = actor->RequestDetectionLevel(target, RE::DETECTION_PRIORITY::kCritical);
 									bool los_ = false;
 									bool los = actor->HasLineOfSight(target, los_);

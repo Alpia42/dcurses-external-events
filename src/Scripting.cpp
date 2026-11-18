@@ -90,6 +90,50 @@ namespace DCURSES {
         return true;
     }
 
+    namespace {
+        // SLO Aroused NG 3.3.0+ exports a C API from its DLL. Arousal there is the sum of named
+        // effects, so this mod adds its own effects instead of writing the shared exposure value.
+        struct SLOArousedAPI {
+            float (*GetArousal)(RE::Actor*) = nullptr;
+            void (*ModDynamicEffect)(RE::Actor*, const char*, float, float) = nullptr;
+            void (*SetDynamicEffect)(RE::Actor*, const char*, float, int32_t, float, float) = nullptr;
+            void (*AddLinearEffect)(RE::Actor*, const char*, float, float, float) = nullptr;
+            void (*ClearDynamicEffect)(RE::Actor*, const char*) = nullptr;
+        };
+
+        // SLA_FuncDecay: the value halves every `param` game days.
+        constexpr int32_t SLO_FUNC_DECAY = 1;
+
+        constexpr auto SLO_AROUSAL_EFFECT = "DeviousCurses_Arousal";
+        constexpr auto SLO_RESET_EFFECT = "DeviousCurses_FrigidWash";
+
+        const SLOArousedAPI* GetSLOAroused() {
+            static const std::optional<SLOArousedAPI> api = []() -> std::optional<SLOArousedAPI> {
+                HMODULE dllHandle = GetModuleHandle(L"SexlabArousedNG.dll");
+                if (dllHandle == NULL) {
+                    return std::nullopt;
+                }
+                SLOArousedAPI result;
+                result.GetArousal = reinterpret_cast<decltype(result.GetArousal)>(GetProcAddress(dllHandle, "SLA_GetArousal"));
+                result.ModDynamicEffect = reinterpret_cast<decltype(result.ModDynamicEffect)>(GetProcAddress(dllHandle, "SLA_ModDynamicEffect"));
+                result.SetDynamicEffect = reinterpret_cast<decltype(result.SetDynamicEffect)>(GetProcAddress(dllHandle, "SLA_SetDynamicEffect"));
+                result.AddLinearEffect = reinterpret_cast<decltype(result.AddLinearEffect)>(GetProcAddress(dllHandle, "SLA_AddLinearEffect"));
+                result.ClearDynamicEffect = reinterpret_cast<decltype(result.ClearDynamicEffect)>(GetProcAddress(dllHandle, "SLA_ClearDynamicEffect"));
+                if (!result.GetArousal || !result.ModDynamicEffect || !result.SetDynamicEffect || !result.AddLinearEffect || !result.ClearDynamicEffect) {
+                    log::warn("SLO Aroused NG is older than 3.3.0, using the SLA API.");
+                    return std::nullopt;
+                }
+                log::info("SLO Aroused NG found, using its native API.");
+                return result;
+            }();
+            return api ? &*api : nullptr;
+        }
+    }
+
+    bool CheckSLOAroused() {
+        return GetSLOAroused() != nullptr;
+    }
+
     RE::BSScript::Variable* GetMCMSetting(std::string name, std::string modname, std::string scriptname) {
         RE::TESForm* form = StaticDataHolder::GetSingleton()->LookupForm(DCURSES_MCM, modname);
         if (!form) {
@@ -362,12 +406,22 @@ namespace DCURSES {
     }
 
     int ScriptingManager::GetArousal(RE::Actor* actor) {
+        if (auto slo = GetSLOAroused()) {
+            // Live value for any actor; the faction rank only moves for actors in an update cycle.
+            return static_cast<int>(std::clamp(slo->GetArousal(actor), 0.0f, 100.0f));
+        }
         RE::TESFaction* sla_arousal = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(0x3FC36, "SexLabAroused.esm");
         auto arousal = actor->GetFactionRank(sla_arousal, actor == RE::PlayerCharacter::GetSingleton());
         return arousal;
     }
 
     void ScriptingManager::WithArousal(RE::Actor* actor, std::function<void(float)> func) {
+        if (auto slo = GetSLOAroused()) {
+            // Writes through the native API apply at once, so this read already sees them.
+            func(std::clamp(slo->GetArousal(actor), 0.0f, 100.0f));
+            return;
+        }
+
         RE::BSScript::IFunctionArguments* args = RE::MakeFunctionArguments<RE::Actor*>(std::move(actor));
 
         if (CheckOSL()) {
@@ -386,11 +440,33 @@ namespace DCURSES {
     }
 
     void ScriptingManager::ModifyArousal(RE::Actor* actor, float arousal) {
-        if (CheckOSL()) {
+        if (auto slo = GetSLOAroused()) {
+            // One locked add, so calls from the update thread and the main thread never lose each other's change,
+            // then the decay; a zero initial value leaves the value as it is and only sets the function.
+            slo->ModDynamicEffect(actor, SLO_AROUSAL_EFFECT, arousal, arousal < 0.0f ? 0.0f : 100.0f);
+            if (arousal > 0.0f) {
+                float halfLifeDays = std::max(Settings::GetSingleton()->arousalHalfLife, 1.0f) / 24.0f;
+                slo->SetDynamicEffect(actor, SLO_AROUSAL_EFFECT, 0.0f, SLO_FUNC_DECAY, halfLifeDays, 0.0f);
+            }
+        }
+        else if (CheckOSL()) {
             OSL_ModifyArousal(actor, arousal);
         }
         else {
             Generic_ModifyArousal(actor, static_cast<int>(arousal));
+        }
+    }
+
+    void ScriptingManager::ResetArousal(RE::Actor* actor) {
+        if (auto slo = GetSLOAroused()) {
+            // Other mods' effects stay, so hold the total down with -100 that climbs back to 0 evenly over the
+            // set duration. Drinking another one restarts it at -100.
+            slo->ClearDynamicEffect(actor, SLO_AROUSAL_EFFECT);
+            float hours = std::max(Settings::GetSingleton()->arousalPotionDuration, 1.0f);
+            slo->AddLinearEffect(actor, SLO_RESET_EFFECT, -100.0f, 100.0f / hours, 0.0f);
+        }
+        else {
+            ModifyArousal(actor, -1000);
         }
     }
 

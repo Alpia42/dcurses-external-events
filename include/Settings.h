@@ -38,6 +38,7 @@ namespace DCURSES {
 		//Flag flag_LockOppDevice_Menu			//!oppDeviceAntiCheat || !WearingOppressiveDevice() 
 		//Flag flag_WickedDevices				//ESP:Devious Wicked Devices.esp
 		//Flag flag_AND							//ESP:Advanced Nudity Detection.esp
+		//Flag flag_SLOAroused					//helpSLOArousedInstalled
 		
 		//Page Main								
 		//Header Chances
@@ -65,6 +66,7 @@ namespace DCURSES {
 		//Header Arousal
 		float arousalModifier = 1.4f;			//Arousal Modifier//If this is greater than 1, curses will me more likely the more aroused the player is.\nIf set to 10 with full arousal will multiply the chance by 10 while half arousal would multiply the chance by 5.//{1}//(1,10,0.1)
 		int minArousal = 10;					//Minimum Arousal//Curses won't trigger if the player is below this arousal level.//{0}//(0,100,1)
+		float arousalHalfLife = 12.0f;			//Arousal Half-Life//SLO Aroused NG only. The arousal this mod adds loses half its value every this many game hours.//{0}//(1,72,1)		?:? flag_SLOAroused
 		
 		//Page Devices
 		//Header Chastity
@@ -198,13 +200,13 @@ namespace DCURSES {
 		//Header Allure
 		int LMAllureWeight = 10;				//Allure Mark Weight//This mark will make everyone around you horny all the time.//{0}//(0,500,1)							?:? flag_LewdMarks
 		int LMAllureMod = 5;					//Allure Arousal//How much each nearby character's arousal will change per minute.//{0}//(0,200,1)							?:? flag_LewdMarks
-		int LMAllureSex = 25;					//Sex Count//How many times you have to have sex before the mark will fade.//{0}//(3,100,1)									?:? flag_LewdMarks
+		int LMAllureSex = 25;					//Sex Count//How many times you have to have sex before the mark will fade.//{0}//(3,500,1)									?:? flag_LewdMarks
 		bool LMAllureSkipRequirements = true;	//Skip Sex Requirements//Requirements for both the player and NPC's will be skipped	for random sex.							?:? flag_LewdMarks
 		color LMAllureColor = 0xcf11c5;			//Color//Color for mark.																									?:? flag_LewdMarks
 		//Header Heat
 		int LMHeatWeight = 10;					//Heat Mark Weight//This mark will constantly make you horny.//{0}//(0,500,1)												?:? flag_LewdMarks
 		int LMHeatMod = 30;						//Heat Arousal//How much your arousal will change per minute.//{0}//(0,200,1)												?:? flag_LewdMarks
-		int LMHeatContainerCount = 50;			//Container Count//How many containers you must open before the mark will fade.//{0}//(10,200,1)							?:? flag_LewdMarks
+		int LMHeatContainerCount = 50;			//Container Count//How many containers you must open before the mark will fade.//{0}//(10,1000,1)							?:? flag_LewdMarks
 		color LMHeatColor = 0xe3143a;			//Color//Color for mark.																									?:? flag_LewdMarks
 		//Header Branding
 		int LMBrandingWeight = 10;				//Branding Mark Weight//This mark will force you to have a certain number of tattoos!//{0}//(0,500,1)						?:? flag_RT_LM
@@ -224,20 +226,20 @@ namespace DCURSES {
 		float LMBondageModifier = 5.0f;			//Event Modifier//Modifier to event chance with the mark.\nThis will only increase the chance of the Bondage Curse, and curses triggerd this way won't affect followers.//{1}X//(1,100,0.1)		?:? flag_LewdMarks
 		//float LMBondageChance = 5.0f;			//Chance//How likely an item might be equipped from your inventory per 15 seconds.//{1}%//(0,100,0.1)																							?:? flag_LewdMarks
 		int LMBondageDeviceCapAdd = 3;			//Restraints Cap Modifier//How much higher the Restraints Cap for events will be.//{0}//(0,10,1)																								?:? flag_LewdMarks
-		int LMBondageDeviceCount = 25;			//Device Count//How many devices need to be equipped before the mark will fade.\nThis counts items equipped by the bondage curse and from your inventory.//{0}//(1,500,1)						?:? flag_LewdMarks
+		int LMBondageDeviceCount = 25;			//Device Count//How many devices need to be equipped before the mark will fade.\nThis counts items equipped by the bondage curse and from your inventory.//{0}//(1,2000,1)						?:? flag_LewdMarks
 		color LMBondageColor = 0x7908cf;		//Color//Color for mark.																																										?:? flag_LewdMarks
 		//Header Nudity
 		//Flag flag_LMStripBody					//LMNudityChestOnly && flag_LewdMarks == 0
 		int LMNudityWeight = 15;				//Nudity Mark Weight//With this mark you will be unable to wear any clothes.//{0}//(0,500,1)								?:? flag_LewdMarks
 		bool LMNudityChestOnly = false;			//Chest Only//With this enabled only chest armor will be checked and removed. Otherwise all armor will be unequipped.		?:? flag_LewdMarks **RELOAD
 		text LMNudityAditionalForms = "";		//Strip Slots//A comma separated list of additional slots to strip. Will not strip devices.\nFor example: 46,47,49,52.		?:? flag_LMStripBody
-		int LMNudityTalkTimes = 35;				//Dialogue Times//How many times you have to talk to different characters before the mark will fade.//{0}//(3,100,1)		?:? flag_LewdMarks
+		int LMNudityTalkTimes = 35;				//Dialogue Times//How many times you have to talk to different characters before the mark will fade.//{0}//(3,500,1)		?:? flag_LewdMarks
 		bool LMNuditySkipGagged = true;			//Skip When Gagged//The Nudity Mark counter will not decrease when the player is gagged. You must actually talk to people.	?:? flag_LewdMarks
 		color LMNudityColor = 0xd676cb;			//Color//Color for mark.																									?:? flag_LewdMarks
 		//Header Painslut
 		int LMPainslutWeight = 10;				//Painslut Mark Weight//This mark will make you more aroused whenever you are hit by an enemy!//{0}//(0,500,1)				?:? flag_LewdMarks
 		int LMPainslutMod = 5;					//Arousal Change//How much arousal you will gain when getting hit.//{0}//(1,100,1)											?:? flag_LewdMarks
-		int LMPainslutCount = 25;				//Enemy Count//How many enemies you must kill at high arousal.//{0}//(1,500,1)												?:? flag_LewdMarks
+		int LMPainslutCount = 25;				//Enemy Count//How many enemies you must kill at high arousal.//{0}//(1,1000,1)												?:? flag_LewdMarks
 		float LMPainslutSexChance = 15.0f;		//Sex Chance//Chance that your attacker will have sex with you when you are hit at high arousal.//{1}//(0,100,0.1)			?:? flag_LewdMarks
 		int LMPainslutArousal = 90;				//High Arousal//What counts for "high arousal" for this mark.//{0}//(1,100,1)												?:? flag_LewdMarks
 		color LMPainslutColor = 0x911300;		//Color//Color for mark.																									?:? flag_LewdMarks
@@ -341,7 +343,7 @@ namespace DCURSES {
 		bool surpriseMode = false;				//Surprise Mode//Will disable most message boxes when an event happens.\nYou need to figure out what changed!
 		float rDeviceBaseChance = 1.5f;			//Device Base Chance//Chance to loot a random bondage item from a container or a dead body.//{1}%//(0,100,0.1)
 		float rDeviceLuckyBonus = 2.5f;			//Device Lucky Bonus//Device base chance will be multiplied by this value if you are lucky.//{1}//(1,10,0.1)
-		float wardingCharmChance = 0.5f;		//Warding Charm Chance//Chance to find a warding charm. These charms will stop a curse from affecting you!\nThe more you have, the less likely you are to find more.//{2}%//(1,10,0.01)
+		float wardingCharmChance = 0.5f;		//Warding Charm Chance//Chance to find a warding charm. These charms will stop a curse from affecting you!\nThe more you have, the less likely you are to find more.//{2}%//(0,10,0.01)
 		bool dragonHoard = true;				//Dragon Hoards//Dragons will drop more gold, but the gold they carry is likely to be cursed.\nWith this enabled some settings might be ignored when looting dragons.
 		bool bossExtraGold = true;				//Boss Chest Extra Gold//Boss chests will have extra gold.
 		bool useThemes = false;					//Use Device Themes//Events that equip the player with devices will try to keep all devices equipped to a consistent theme.\nWARNING: this will increase the time taken to run each event and may cause lag spikes.
@@ -352,6 +354,7 @@ namespace DCURSES {
 		float tatSolventChance = 0.5f;			//Universal Solvent Chance//Chance to find universal solvent when looting dead bodies. Universal solvent will remove all lewd marks and tattoos.\nHaving more tattoos will slightly increase the chance of finding one.\nSet to 0 to disable.//{2}%//(0,100,0.01)
 		float arousalPotionChance = 5.0f;		//Frigid Wash Chance//Chance to find a potion that will reduce your arousal. The chance increases slightly with high arousal.\nYou can only cary a max of 3 at a time.//{2}%//(0,100,0.01)
 		float arousalPotionLibido = 10.0f;		//Frigid Wash Libido//How much your libido will decrease when drinking a frigid wash. Only works if OSLAroused is installed.//{1}//(0,100,0.1)
+		float arousalPotionDuration = 24.0f;	//Frigid Wash Duration//SLO Aroused NG only. A frigid wash lowers your arousal by 100, then wears off evenly over this many game hours.//{0}//(1,72,1)		?:? flag_SLOAroused
 		bool restrictFastTravel = true;			//Restrict Fast Travel//You will be unable to fast travel when wearing heavy bondage, hobbling devices, boots, and blindfolds.								**RELOAD
 		bool restrictFastTravelPart = false;	//Partial Restrict Fast Travel//You will be unable to fast travel when wearing any visible devices.															?:? flag_ft_restricted
 		bool restrictFastTravelFull = false;	//Fully Restrict Fast Travel//You will be unable to fast travel when wearing any devices.																	?:? flag_ft_restricted
@@ -515,7 +518,8 @@ namespace DCURSES {
 		bool helpLewdMarksInstalled = false;	//Lewd Marks//Lewd marks must be installed for Slave Tats Without the Glow Patch.\nINSTALLING WITH GLOW PATCH WILL BREAK SLAVE TATS NG									**NO_OPT
 		bool helpRapeTattoosInstalled = false;	//Rape Tattoos//Rape tattoos is required for the random tattoo event, and is not required for lewd marks.																**NO_OPT
 		//Header Other Integrations
-		bool helpOSLArousedInstalled = false;	//OSL Aroused//The arousal system that this mod is designed around.\nVersion 6.0+ is required for full functionality.\nOther systems can be used, as long as they work with the SLA API\nSLO Aroused NG not supported.	**NO_OPT
+		bool helpOSLArousedInstalled = false;	//OSL Aroused//The arousal system that this mod is designed around.\nVersion 6.0+ is required for full functionality.\nOther systems can be used, as long as they work with the SLA API	**NO_OPT
+		bool helpSLOArousedInstalled = false;	//SLO Aroused NG//Used through its own API when installed (3.3.0 or newer).\nArousal is read live for every actor, and the arousal this mod adds shows up there as its own effects.	**NO_OPT
 		bool helpUDInstalled = false;			//Unforgiving Devices//Remember to install the UD patch in the MCM.																										**NO_OPT
 		bool helpQuickLootInstalled = false;	//Quick Loot IE//Allows for events to be triggered when looting an item from a container.																				**NO_OPT
 		bool helpDWDInstalled = false;			//Devious Wicked Devices//Adds event to equip a wicked device. Follows all distrobution settings from the Devious Wicked Devices MCM page.								**NO_OPT
