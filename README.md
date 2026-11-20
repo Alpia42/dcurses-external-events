@@ -2,7 +2,9 @@
 
 A fork of [Devious Curses NG](https://www.loverslab.com/files/file/41083-devious-curses-ng/) by CyberCheese. Other mods can add their own weighted events to the chest, door and body roll. Devious Curses still decides whether anything fires, and a registered event only competes with the built-in weights. This fork also adds support for SLO Aroused NG and fixes several bugs from 0.9.0.
 
-Version 0.11.0, based on Devious Curses NG 0.9.0.
+Version 0.12.0, based on Devious Curses NG 0.9.0.
+
+0.12.0 adds support for Skyrim 1.7.99 and 1.7.104 and is still being tested. It keeps working on 1.5.97 and 1.6.x. On 1.7 you need SKSE 2.3.x and the 1.7 Address Library.
 
 See [docs/ExternalEvents.md](docs/ExternalEvents.md) for the register and run events, the id rules, the optional `~takekeys` flag, and a Papyrus example.
 
@@ -18,7 +20,7 @@ This is a DLL. Replace `DeviousCurses.dll` in the installed Devious Curses NG 0.
 
 ## Building
 
-Visual Studio with the C++ and CMake workloads, using the vcpkg bundled with Visual Studio. `ports/commonlibsse-ng` pins the CommonLibSSE-NG version. Set `OUTPUT_FOLDER` to a mod folder to have the DLL copied there after a build.
+Visual Studio with the C++ and CMake workloads, using the vcpkg bundled with Visual Studio. `ports/commonlibsse-ng` pins CommonLibSSE NG to [MinLL/CommonLibVR](https://github.com/MinLL/CommonLibVR) v4.39.5, an MIT fork with 1.7 support. If you built 0.11.0 or older before, delete the build folder or use Delete Cache and Reconfigure so the new CommonLib gets built. Set `OUTPUT_FOLDER` to a mod folder to have the DLL copied there after a build.
 
 The source of the Quests add-on is not public. `src/Quest/Stubs.cpp` keeps the DLL linkable and carries the add-on's save record through unchanged.
 
