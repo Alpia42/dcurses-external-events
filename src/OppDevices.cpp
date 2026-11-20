@@ -120,7 +120,7 @@ namespace DCURSES {
 		RE::TESObjectARMO* summoner_collar = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(SUMMONER_COLLAR, "Devious Curses.esp");
 
 		auto magic = player->AsActorValueOwner()->GetActorValue(RE::ActorValue::kMagicka);
-		player->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kMagicka, -magic);
+		player->AsActorValueOwner()->ModActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kMagicka, -magic);
 
 		ScriptingManager().LockDevice(player, summoner_collar, true);
 		if (!containerName.empty()) {
@@ -145,7 +145,7 @@ namespace DCURSES {
 		RE::TESObjectARMO* latex_open = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(LIVING_LATEX_OPEN, "Devious Curses.esp");
 
 		auto stamina = player->AsActorValueOwner()->GetActorValue(RE::ActorValue::kStamina);
-		player->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kStamina, -stamina / 2);
+		player->AsActorValueOwner()->ModActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kStamina, -stamina / 2);
 
 		auto scriptManager = ScriptingManager();
 
@@ -567,7 +567,7 @@ namespace DCURSES {
 							RE::MagicCaster* caster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kOther);
 							caster->CastSpellImmediate(conjure_spell, false, player, 3.0f, false, 0.0f, nullptr);
 							auto magic = player->AsActorValueOwner()->GetActorValue(RE::ActorValue::kMagicka);
-							if (settings->oppSCollarDrainsMagicka) player->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kMagicka, -magic);
+							if (settings->oppSCollarDrainsMagicka) player->AsActorValueOwner()->ModActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kMagicka, -magic);
 
 							auto conjure_base_id = conjure_target->formID;
 

@@ -293,10 +293,16 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
 
     REL::Version version = skse->RuntimeVersion();
 
-    can_install_fast_travel_hook = skse->RuntimeVersion() >= SKSE::RUNTIME_SSE_1_6_640;
+    log::info("Skyrim runtime {}", version.string("."));
+
+    const bool is_1_7 = version >= REL::Version(1, 7, 0, 0);
+    can_install_fast_travel_hook = version >= SKSE::RUNTIME_SSE_1_6_640 && (!is_1_7 || kFastTravelHookOn1_7);
 
     if (can_install_fast_travel_hook) {
         SKSE::AllocTrampoline(14);
+    }
+    else if (is_1_7) {
+        log::info("Fast travel hooks skipped on 1.7.x (kFastTravelHookOn1_7 is off). Using the Papyrus fallback.");
     }
     else {
         log::info("Fast travel hooks skipped for version < 1.6.640");
@@ -307,7 +313,7 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
         {
         case SKSE::MessagingInterface::kDataLoaded: {
             if (!CheckESPLoaded()) {
-                stl::report_and_fail("Devious Curses ESP is not loaded. If you are on skyrim version older than 1.6.1130 (Not AE) make sure to install Backported Extended ESL Support.");
+                stl::report_and_fail("Devious Curses ESP is not loaded. Skyrim 1.6.1130 and later (including 1.7.x) load it natively; on older versions such as 1.5.97, make sure to install Backported Extended ESL Support.");
                 return;
             }
             else {
@@ -329,7 +335,7 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
             QLIEAttemptInit();
 
             if (can_install_fast_travel_hook) {
-                InstallFastTravelHooks();
+                can_install_fast_travel_hook = InstallFastTravelHooks();
             }
 
             if (Settings::GetSingleton()->debugMode) {

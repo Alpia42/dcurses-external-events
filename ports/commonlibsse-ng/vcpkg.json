@@ -1,11 +1,12 @@
 {
   "name": "commonlibsse-ng",
-  "version-semver": "3.7.0",
+  "version-semver": "4.39.5",
   "description": "A reverse engineered resource for developing SKSE plugins, supporting portable plugins that work across AE, SE, and VR.",
-  "homepage": "https://github.com/alandtse/CommonLibVR/tree/ng",
+  "homepage": "https://github.com/MinLL/CommonLibVR",
   "license": "MIT",
   "supports": "windows & x64",
   "dependencies": [
+    "directxmath",
     "directxtk",
     "fmt",
     "rapidcsv",

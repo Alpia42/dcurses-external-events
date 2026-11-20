@@ -21,12 +21,22 @@ namespace DCURSES {
 		return CanFastTravelDevices() && _CanFastTravelMap(actor, a_bool);
 	}
 
-	void InstallFastTravelHooks() {
-		auto& trampoline = SKSE::GetTrampoline();
+	bool InstallFastTravelHooks() {
 		static REL::Relocation<std::uintptr_t> Can_Fast_Travel_Map_Hook{ REL::ID(53095), 0x328 };
+		const auto address = Can_Fast_Travel_Map_Hook.address();
 
-		_CanFastTravelMap = trampoline.write_call<5>(Can_Fast_Travel_Map_Hook.address(), CanFastTravelMap);
+		// write_call<5> expects a rel32 call (E8). Anything else means the game code changed: skip the hook
+		// rather than patch the wrong instruction.
+		const auto opcode = *reinterpret_cast<const std::uint8_t*>(address);
+		if (opcode != 0xE8) {
+			log::warn("Fast travel hook skipped: expected a call (E8) at +{:X}, found {:02X}. Using the Papyrus fallback.",
+				address - REL::Module::get().base(), opcode);
+			return false;
+		}
+
+		_CanFastTravelMap = SKSE::GetTrampoline().write_call<5>(address, CanFastTravelMap);
 		log::trace("Installed ft hook");
+		return true;
 	}
 
 	void SetFastTravelStatePapyrus(bool can_install_fast_travel_hook) {

@@ -604,7 +604,7 @@ namespace DCURSES {
 				if (deviceRendered->HasKeywordString("zad_DeviousBelt") && ((Util::FormEditorIdContains(deviceInventory, "Cage") || Util::FormEditorIdContains(deviceRendered, "vivis")))) {
 					isCage = true;
 					typedef RE::BGSBipedObjectForm::BipedObjectSlot BOS;
-					auto slot = static_cast<uint32_t>(deviceRendered->GetSlotMask());
+					auto slot = static_cast<uint32_t>(deviceRendered->GetSlotMask().underlying());
 					if (!(slot & (static_cast<uint32_t>(BOS::kModPelvisSecondary) | static_cast<uint32_t>(BOS::kModPelvisPrimary)))) {
 						log::warn("{} does not have propper slots set.", deviceInventory->GetName());
 					}
@@ -1373,7 +1373,7 @@ namespace DCURSES {
 				continue;
 			}
 
-			BOS slotMask = equipped->GetSlotMask();
+			BOS slotMask = equipped->GetSlotMask().get();
 
 			if ((equipped->GetArmorRating() <= 0.1 && (slotMask == BOS::kAmulet || slotMask == BOS::kRing || slotMask == BOS::kCirclet))) {
 				continue;
