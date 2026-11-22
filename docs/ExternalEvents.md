@@ -64,6 +64,31 @@ EndEvent
 
 `DCurses_EventTriggered` is also sent, as `Event OnDCTriggered(String eventName, String eventSource, Form akActor, String otherEventData)`. `eventName` is the id, `eventSource` is the container name, `akActor` is the player, and `otherEventData` is `External`.
 
+`DCurses_EffectsApplied` reports the same attempt with the affected actor as `sender`, zero as `numArg`, and JSON in `strArg`. For example, `{"curse":"mycurse","source":"Chest","detail":"External","status":"attempted"}`. It also covers built-in traps that send `DCurses_EventTriggered`. The payload describes the attempt only.
+
+## Built-in notifications
+
+Initial oppressive device requests use `Oppressive` with one of these `detail` values: `SummonerCollar`, `LivingLatex`, `DwarvenCuirass`, `MadnessPlug`, or `NocturnalPiercing`. Latex and cuirass variants share their detail values. Direct mark selection emits `LewdMark` with the selected mark name when the mark is added.
+
+Direct quest operations use `QuestInteraction` with an empty `source`.
+
+| `detail` | Operation |
+|---|---|
+| `MeridiaBrandingMark` | Add the Branding mark |
+| `SanguineStart` | Swap plugs or add the Nudity mark |
+| `SanguineEnd` | Award a magic key or remove the Nudity mark |
+| `BrelynaPetSuit` | Request a pet suit |
+| `DwemerMuseumHeatMark` | Add the Heat mark |
+| `CompanionsPuppyCollar` | Request a puppy collar |
+| `Ringmaker` | Grant Lucky Piercings and request devices |
+| `DeliveryReward` | Award a magic key |
+
+Quest handlers can also emit `Bondage` or `Oppressive` for separate device requests. Saarthal's amulet removal is outside its `Oppressive` notification.
+
+## Nudity dialogue credit
+
+Send `DCurses_NudityTalkedTo` without a payload to request one credit. The player needs an active Nudity mark, a positive counter, and must meet the Nudity and gag rules while DCurses is active. Credit works with consequences disabled. The caller decides when to send it. Vanilla dialogue can still credit the same NPC repeatedly.
+
 ## Confirmation
 
 The log records `Registered external event '<id>' weight N (<plugin>).` (with `, takes keys` after the weight when flagged) the first time an id is seen after a load, and `Updated external event '<id>' weight N (<plugin>).` when it is sent again. It also logs `Unregistered external event`, `Cleared external events.` on each load, `Ran external event <id> (<name>) from '<container>'` when the bucket is picked, `External event <id> removed keys.` when a `~takekeys` event wins the key loss roll, an unknown-flag warning, and a warning for a rejected id, a NaN or infinite weight, a clamped weight, or an id taken over from another plugin. There is no on-screen notice.
@@ -71,5 +96,7 @@ The log records `Registered external event '<id>' weight N (<plugin>).` (with `,
 The Devious Curses MCM has an External Events page. It lists each registered display name, id, and weight, or `None registered`. It does not edit the weight. The mod that registered the event owns that.
 
 ## Suspend
+
+The DCurses MCM suspension setting stops both built-in and external bucket rolls from player activation.
 
 `dhlp-Suspend` does not stop the roll. Built-in and external buckets both still run while it is set.

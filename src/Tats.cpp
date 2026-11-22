@@ -3,6 +3,7 @@
 #pragma warning(default : 4062)
 
 #include "apis/jcontainers.hpp"
+#include "Consequences.h"
 #include "Settings.h"
 #include "MGEF_Controller.h"
 #include "Sex.h"
@@ -75,6 +76,16 @@ namespace DCURSES {
 	}
 	MARK GetLewdMark() {
 		return static_cast<MARK>(Serialized::GetLewdMarkCounters()->currentMark);
+	}
+	void CreditNudityDialogue() {
+		auto& remaining = Serialized::GetLewdMarkCounters()->nudityCounter;
+		if (remaining <= 0 || GetLewdMark() != MARK::TAT_NUDITY || IsModDisabled()) return;
+
+		auto player = RE::PlayerCharacter::GetSingleton();
+		if (!player || !getIsNude(player, true)) return;
+		if (Settings::GetSingleton()->LMNuditySkipGagged && GetWornDeviceKeywords(player).contains("zad_DeviousGag")) return;
+
+		--remaining;
 	}
 	int GetColorForMark(MARK mark) {
 		auto settings = Settings::GetSingleton();

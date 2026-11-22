@@ -10,6 +10,7 @@
 #include "Scripting.h"
 #include "OppDevices.h"
 #include "ExternalEvents.h"
+#include "ModEvents.h"
 #include "Tats.h"
 #include "MGEF_Controller.h"
 #include "Translation.h"
@@ -77,7 +78,7 @@ namespace DCURSES {
             }
             if (IsModDisabled()) {
                 log::trace("Activate skipped, mod is disabled.");
-                //return RE::BSEventNotifyControl::kContinue;
+                return RE::BSEventNotifyControl::kContinue;
             }
             QICheckObjectActivation(activatedObject); // Must do first!
 
@@ -350,6 +351,11 @@ namespace DCURSES {
     }
     RE::BSEventNotifyControl ModEventSink::ProcessEvent(const SKSE::ModCallbackEvent* modEvent, RE::BSTEventSource<SKSE::ModCallbackEvent>*) {
         std::string name = Util::trim(Util::tolower(std::string(modEvent->eventName)));
+        if (name == "dcurses_effectsapplied") return RE::BSEventNotifyControl::kContinue;
+        if (name == "dcurses_nuditytalkedto") {
+            SKSE::GetTaskInterface()->AddTask([] { CreditNudityDialogue(); });
+            return RE::BSEventNotifyControl::kContinue;
+        }
         std::string strArg = Util::trim(Util::tolower(std::string(modEvent->strArg)));
         int numArg = static_cast<int>(modEvent->numArg);
         auto player = RE::PlayerCharacter::GetSingleton();
@@ -461,8 +467,9 @@ namespace DCURSES {
                 if (oldMark != mark) {
                     RemoveLewdMark();
                     if (mark != MARK::TAT_NONE) {
-                        AddLewdMark(mark);
+                        const auto added = AddLewdMark(mark);
                         SetMarkToDefaultSettings(mark);
+                        if (added) SendCurseModEvent("LewdMark", "", player, GetMarkAsString(mark));
                     }
                 }
 
