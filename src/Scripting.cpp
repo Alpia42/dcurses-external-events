@@ -1,5 +1,7 @@
 #include "Scripting.h"
 
+#include <atomic>
+
 #include "form_ids.h"
 #include "apis/DDNG_API.h"
 #include "SexLabPPFunctions.h"
@@ -405,29 +407,72 @@ namespace DCURSES {
         RunIntent(intent);
     }
 
-    int ScriptingManager::GetArousal(RE::Actor* actor) {
-        if (auto slo = GetSLOAroused()) {
-            // Live value for any actor; the faction rank only moves for actors in an update cycle.
-            return static_cast<int>(std::clamp(slo->GetArousal(actor), 0.0f, 100.0f));
+    namespace {
+        // SLO's bridge ships an empty dummy OSLAroused.esp, so CheckOSL only passes with the real OSL. With SLO's
+        // DLL loaded as well, one of them is a leftover. SLO stays first; when it reads 0 and OSL reads more, the
+        // install is mixed and OSL is the one tracking arousal, so reads and writes go to OSL for the session.
+        std::atomic_bool mixedArousalInstall = false;
+
+        void UseOSLForMixedInstall(float sloValue, float oslValue) {
+            if (mixedArousalInstall.exchange(true)) {
+                return;
+            }
+            log::warn("SLO Aroused NG's DLL and OSL Aroused are both installed. SLO read {}, OSL read {}, using OSL. The install should be fixed.", sloValue, oslValue);
+            ScriptingManager().DBGMessageBox(Translator(Translation::ArousalMixedInstall));
         }
-        RE::TESFaction* sla_arousal = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(0x3FC36, "SexLabAroused.esm");
-        auto arousal = actor->GetFactionRank(sla_arousal, actor == RE::PlayerCharacter::GetSingleton());
-        return arousal;
+
+        int GetSLAFactionArousal(RE::Actor* actor) {
+            // OSL keeps this rank current as well.
+            RE::TESFaction* sla_arousal = StaticDataHolder::GetSingleton()->LookupForm<RE::TESFaction>(0x3FC36, "SexLabAroused.esm");
+            return actor->GetFactionRank(sla_arousal, actor == RE::PlayerCharacter::GetSingleton());
+        }
+    }
+
+    int ScriptingManager::GetArousal(RE::Actor* actor) {
+        auto slo = mixedArousalInstall ? nullptr : GetSLOAroused();
+        if (slo) {
+            // Live value for any actor; the faction rank only moves for actors in an update cycle.
+            float value = std::clamp(slo->GetArousal(actor), 0.0f, 100.0f);
+            if (value <= 0.0f && CheckOSL()) {
+                int oslValue = GetSLAFactionArousal(actor);
+                if (oslValue > 0) {
+                    UseOSLForMixedInstall(value, static_cast<float>(oslValue));
+                    return oslValue;
+                }
+            }
+            return static_cast<int>(value);
+        }
+        return GetSLAFactionArousal(actor);
     }
 
     void ScriptingManager::WithArousal(RE::Actor* actor, std::function<void(float)> func) {
-        if (auto slo = GetSLOAroused()) {
+        auto slo = mixedArousalInstall ? nullptr : GetSLOAroused();
+        float sloValue = -1.0f;
+        if (slo) {
             // Writes through the native API apply at once, so this read already sees them.
-            func(std::clamp(slo->GetArousal(actor), 0.0f, 100.0f));
-            return;
+            sloValue = std::clamp(slo->GetArousal(actor), 0.0f, 100.0f);
+            if (sloValue > 0.0f || !CheckOSL()) {
+                func(sloValue);
+                return;
+            }
         }
 
         RE::BSScript::IFunctionArguments* args = RE::MakeFunctionArguments<RE::Actor*>(std::move(actor));
 
         if (CheckOSL()) {
             auto intent = ScriptIntent("OSLArousedNative", "GetArousal", args);
-            RunIntentWithResultSimple<float>(intent, [func](std::optional<float> arousal) {
-                func(arousal.value_or(-1));
+            RunIntentWithResultSimple<float>(intent, [func, sloValue](std::optional<float> arousal) {
+                float oslValue = arousal.value_or(-1);
+                if (sloValue >= 0.0f) {
+                    // SLO read 0 with OSL also loaded.
+                    if (oslValue > 0.0f) {
+                        UseOSLForMixedInstall(sloValue, oslValue);
+                    }
+                    else {
+                        oslValue = sloValue;
+                    }
+                }
+                func(oslValue);
                 });
         }
         else {
@@ -440,7 +485,8 @@ namespace DCURSES {
     }
 
     void ScriptingManager::ModifyArousal(RE::Actor* actor, float arousal) {
-        if (auto slo = GetSLOAroused()) {
+        auto slo = mixedArousalInstall ? nullptr : GetSLOAroused();
+        if (slo) {
             // One locked add, so calls from the update thread and the main thread never lose each other's change,
             // then the decay; a zero initial value leaves the value as it is and only sets the function.
             slo->ModDynamicEffect(actor, SLO_AROUSAL_EFFECT, arousal, arousal < 0.0f ? 0.0f : 100.0f);
@@ -458,7 +504,8 @@ namespace DCURSES {
     }
 
     void ScriptingManager::ResetArousal(RE::Actor* actor) {
-        if (auto slo = GetSLOAroused()) {
+        auto slo = mixedArousalInstall ? nullptr : GetSLOAroused();
+        if (slo) {
             // Other mods' effects stay, so hold the total down with -100 that climbs back to 0 evenly over the
             // set duration. Drinking another one restarts it at -100.
             slo->ClearDynamicEffect(actor, SLO_AROUSAL_EFFECT);

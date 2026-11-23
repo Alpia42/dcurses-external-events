@@ -155,6 +155,8 @@ namespace DCURSES {
 		FastTravelUnableNamed,//You can't fast travel while wearing {}!
 
 		QuestLFTrinketName,//{}'s Trinket
+
+		ArousalMixedInstall,//DCurses: Conflicting SLO Aroused NG and OSL Aroused install detected. Use either SLO with its dummy OSL plugin, or OSL alone without SLO. Please fix your install. Falling back to OSL Aroused for now.
 		//TRNASLATIONS_END
 	};
 

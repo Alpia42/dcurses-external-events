@@ -175,6 +175,7 @@ namespace DCURSES {
 			case (Translation::FastTravelUnableDevices): return "FastTravelUnableDevices";
 			case (Translation::FastTravelUnableNamed): return "FastTravelUnableNamed";
 			case (Translation::QuestLFTrinketName): return "QuestLFTrinketName";
+			case (Translation::ArousalMixedInstall): return "ArousalMixedInstall";
 			//CODEGEN_END_KEYNAME
 		}
 		log::error("Unable to find translation key name for id {}", static_cast<uint32_t>(key));
