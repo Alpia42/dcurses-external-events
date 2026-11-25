@@ -727,8 +727,11 @@ namespace DCURSES {
 					//Util::ExecuteWithDelay(500ms, [player] {
 						//ScriptingManager().StartMasturbation(player);
 					//});
-					PlayerMessage(Translator(Translation::ODeviceDwarvenCuirassMasturbate));
-					StartMasturbationImpl();
+					if (!ActorIsInSceneOrDowned(player) && !player->IsInCombat() && !player->IsInWater() && !RE::UI::GetSingleton()->IsMenuOpen("Dialogue Menu") && !RE::UI::GetSingleton()->IsMenuOpen("Crafting Menu")) {
+						PlayerMessage(Translator(Translation::ODeviceDwarvenCuirassMasturbate));
+						Serialized::GetCounters()->clock_lastSex = -10;
+						StartMasturbationImpl();
+					}
 				}
 				else if (oppdCounters->dwarvenCuirassCounter <= settings->oppDwarvenValueNeeded / 2 && (canPiercingN || canPiercingV || canPlugA || canPlugV || canCollar) && Util::random() <= 10) {
 					DeviceList* deviceList;

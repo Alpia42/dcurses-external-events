@@ -137,6 +137,10 @@ namespace DCURSES {
 
 		if (!actor || !settings->sexEnabled) return false;
 
+		if (ActorIsInSceneOrDowned(RE::PlayerCharacter::GetSingleton())) {
+			return false;
+		}
+
 		if ((mask & 0b0111) != 0 && SexActorFilter(actor, false)) {
 
 			switch (source) {
@@ -416,7 +420,7 @@ namespace DCURSES {
 			return false;
 		}
 
-		if (player->IsInCombat()) {
+		if (player->IsInCombat() || ActorIsInSceneOrDowned(player)) {
 			return false;
 		}
 
@@ -603,6 +607,10 @@ namespace DCURSES {
 		auto settings = Settings::GetSingleton();
 
 		if (!settings->consEnable || Serialized::GetCounters()->clock_GlobalTicker % settings->consScanInterval != 0) {
+			return;
+		}
+
+		if (ActorIsInSceneOrDowned(player)) {
 			return;
 		}
 

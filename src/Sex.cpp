@@ -501,6 +501,31 @@ namespace DCURSES {
 		return tags;
 	}
 
+	bool ActorIsInSceneOrDowned(RE::Actor* actor) {
+		if (!actor) {
+			return true;
+		}
+
+		auto* holder = StaticDataHolder::GetSingleton();
+		auto* sexlabAnim = holder->LookupForm<RE::TESFaction>(0x00E50F, "SexLab.esm");
+		auto* zadAnim = holder->LookupForm<RE::TESFaction>(0x029567, "Devious Devices - Integration.esm");
+		if ((sexlabAnim && actor->IsInFaction(sexlabAnim)) || (zadAnim && actor->IsInFaction(zadAnim))) {
+			return true;
+		}
+
+		if (actor->IsInRagdollState()) {
+			return true;
+		}
+
+		if (auto* state = actor->AsActorState()) {
+			if (state->IsBleedingOut() || state->IsUnconscious()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void StartMasturbationImpl() {
 		auto scriptManager = ScriptingManager();
 		RE::TESForm* sexlab = StaticDataHolder::GetSingleton()->LookupForm(0x0D62, "SexLab.esm");

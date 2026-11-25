@@ -8,6 +8,8 @@ namespace DCURSES {
 
 	bool SexActorFilter(RE::Actor* actor, bool allowInCombat);
 
+	bool ActorIsInSceneOrDowned(RE::Actor* actor);
+
 	bool sexCheckPlayerRequirements();
 
 	bool sexCheckActorRequirements(RE::Actor* actor);

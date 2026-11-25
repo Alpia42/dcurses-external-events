@@ -514,7 +514,10 @@ namespace DCURSES {
 
         auto scriptingManager = ScriptingManager();
         for (auto form_id : set) {
-            auto to_equip = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(form_id, "Unforgivingdevices->esp");
+            auto to_equip = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(form_id, "Unforgivingdevices.esp");
+            if (!to_equip) {
+                continue;
+            }
             auto conflicts = GetDeviceKeywords(to_equip, false);
             bool can_equip = true;
             for (auto conflict : conflicts) {

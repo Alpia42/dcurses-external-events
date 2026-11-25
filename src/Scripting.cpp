@@ -620,7 +620,7 @@ namespace DCURSES {
     }
 
     void ScriptingManager::RTDoTattooEvent(RE::Actor* akActor, int count) {
-        if (akActor == nullptr) { return; }
+        if (akActor == nullptr || !CheckRapeTattoos()) { return; }
 
         RE::TESForm* form = StaticDataHolder::GetSingleton()->LookupForm(0xd62, "RapeTattoos.esp");
         RE::BSScript::IFunctionArguments* args = RE::MakeFunctionArguments<RE::Actor*, int>(std::move(akActor), std::move(count));
