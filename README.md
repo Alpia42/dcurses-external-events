@@ -2,11 +2,13 @@
 
 A fork of [Devious Curses NG](https://www.loverslab.com/files/file/41083-devious-curses-ng/) by CyberCheese. Other mods can add their own weighted events to the chest, door and body roll. Devious Curses still decides whether anything fires, and a registered event only competes with the built-in weights. This fork also adds support for SLO Aroused NG and fixes several bugs from 0.9.0.
 
-Version 0.12.1, based on Devious Curses NG 0.9.0.
+Version 0.12.2, based on Devious Curses NG 0.9.0.
 
 0.12.0 adds support for Skyrim 1.7.99 and 1.7.104 and is still being tested. It keeps working on 1.5.97 and 1.6.x. On 1.7 you need SKSE 2.3.x and the 1.7 Address Library.
 
 0.12.1 handles a broken install where SLO Aroused NG's DLL is loaded next to the real OSL Aroused. If SLO reads 0 and OSL reads more, it falls back to OSL Aroused for the session and shows a one-time popup asking to fix the install. A proper SLO install with its dummy OSL plugin is not affected.
+
+0.12.2 stops Dwarven Cuirass masturbation from repeating when a scene fails to start, skips consequences while the player is in a scene or downed, guards the RTats call when the plugin is missing, and fixes the Unforgiving Devices set lookup typo.
 
 See [docs/ExternalEvents.md](docs/ExternalEvents.md) for the register and run events, the id rules, the optional `~takekeys` flag, and a Papyrus example.
 
