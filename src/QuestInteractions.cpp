@@ -2,6 +2,7 @@
 
 #include "Devices.h"
 #include "Events.h"
+#include "ModEvents.h"
 #include "OppDevices.h"
 #include "tats.h"
 #include "Settings.h"
@@ -48,8 +49,9 @@ namespace DCURSES {
 			RemoveLewdMark();
 		}
 
-		AddLewdMark(MARK::TAT_BRANDING);
+		const auto added = AddLewdMark(MARK::TAT_BRANDING);
 		SetMarkToDefaultSettings(MARK::TAT_BRANDING);
+		if (added) SendCurseModEvent("QuestInteraction", "", RE::PlayerCharacter::GetSingleton(), "MeridiaBrandingMark");
 		PlayerMessage(Translator(Translation::QIMalkoranCurse), Settings::GetSingleton()->surpriseMode);
 		if (Settings::GetSingleton()->eventVisualEffects) { ScriptingManager().PlaySummonVFX(RE::PlayerCharacter::GetSingleton()); }
 	}
@@ -65,10 +67,10 @@ namespace DCURSES {
 			scriptManager.UnlockDevice(player, belt);
 		}
 
-		auto plug = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(DDX_RUSTY_PEAR_ANAL_SIGN, "Devious Devices - Expansion.esm");
-		scriptManager.LockDevice(player, plug, true);
-		plug = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(DDX_RUSTY_PEAR_VAGINAL, "Devious Devices - Expansion.esm");
-		scriptManager.LockDevice(player, plug, true);
+		auto analPlug = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(DDX_RUSTY_PEAR_ANAL_SIGN, "Devious Devices - Expansion.esm");
+		scriptManager.LockDevice(player, analPlug, true);
+		auto vaginalPlug = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(DDX_RUSTY_PEAR_VAGINAL, "Devious Devices - Expansion.esm");
+		scriptManager.LockDevice(player, vaginalPlug, true);
 
 		DoStandardEvent(player, false, "", "(rust | (iron & belt))", 20, 1, { "zad_DeviousGag", "zad_DeviousHeavyBondage", "zad_DeviousBondageMittens", "zad_DeviousPlugVaginal", "zad_DeviousPlugAnal" });
 
@@ -76,8 +78,9 @@ namespace DCURSES {
 		if (mark != MARK::TAT_NONE) {
 			RemoveLewdMark();
 		}
-		AddLewdMark(MARK::TAT_NUDITY);
+		const auto added = AddLewdMark(MARK::TAT_NUDITY);
 		SetMarkToDefaultSettings(MARK::TAT_NUDITY);
+		if (belt || analPlug || vaginalPlug || added) SendCurseModEvent("QuestInteraction", "", player, "SanguineStart");
 
 		Util::ExecuteWithDelay(4s, [] {
 			//PlayerMessage("As you awaken you notice that you're covered in chains and have a strange mark on you. Hopefully Sam can fix this..."); 
@@ -102,6 +105,9 @@ namespace DCURSES {
 		}
 		else {
 			PlayerMessage(Translator(Translation::QISanguineKey));
+		}
+		if (magic_key || (mark == MARK::TAT_NUDITY && GetLewdMark() != mark)) {
+			SendCurseModEvent("QuestInteraction", "", player, "SanguineEnd");
 		}
 	}
 
@@ -170,8 +176,9 @@ namespace DCURSES {
 		auto bondage = GetWornInventoryDeviceByKeyword(player, "zad_DeviousHeavyBondage");
 		if (!suit && !bondage) {
 			auto dev = GetRandomDevice(&Devices::GetSingleton()->petSuits);
-			if (dev.has_value()) {
+			if (dev.has_value() && dev->inv) {
 				ScriptingManager().LockDevice(player, (*dev).inv, true);
+				SendCurseModEvent("QuestInteraction", "", player, "BrelynaPetSuit");
 			}
 		}
 	}
@@ -183,7 +190,9 @@ namespace DCURSES {
 		if (mark != MARK::TAT_NONE) {
 			RemoveLewdMark();
 		}
-		AddLewdMark(MARK::TAT_HEAT);
+		if (AddLewdMark(MARK::TAT_HEAT)) {
+			SendCurseModEvent("QuestInteraction", "", RE::PlayerCharacter::GetSingleton(), "DwemerMuseumHeatMark");
+		}
 
 		if (OppDwarvenCuirassEvent("", true)) {
 			PlayerMessage(Translator(Translation::QIDwemerMuseumCurias), Settings::GetSingleton()->surpriseMode);
@@ -216,6 +225,7 @@ namespace DCURSES {
 		if (!collar) {
 			auto puppy = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(DDX_PUPPY_COLLAR, "Devious Devices - Expansion.esm");
 			ScriptingManager().LockDevice(player, puppy, true);
+			if (puppy) SendCurseModEvent("QuestInteraction", "", player, "CompanionsPuppyCollar");
 		}
 	}
 
@@ -246,7 +256,7 @@ namespace DCURSES {
 	}
 
 	void QIRingmaker() {
-		if (!Settings::GetSingleton()->enableQILaidToRest) { return; }
+		if (!Settings::GetSingleton()->enableQIRingmaker) { return; }
 
 		auto player = RE::PlayerCharacter::GetSingleton();
 		auto scriptingManager = ScriptingManager();
@@ -263,6 +273,7 @@ namespace DCURSES {
 		scriptingManager.LockDevice(player, cuffsA, true);
 		scriptingManager.LockDevice(player, cuffsL, true);
 		if (piercings)scriptingManager.LockDevice(player, piercings, true);
+		if (lucky_piercings || collar || cuffsA || cuffsL || piercings) SendCurseModEvent("QuestInteraction", "", player, "Ringmaker");
 		PlayerMessage(Translator(Translation::QIRingmaker));
 	}
 
@@ -304,6 +315,7 @@ namespace DCURSES {
 			if (GetVisibleDeviceCount(player) >= 4) {
 				RE::TESKey* magicKey = StaticDataHolder::GetSingleton()->LookupForm<RE::TESKey>(MAGIC_KEY, "Devious Curses.esp");
 				player->AddObjectToContainer(skyrim_cast<RE::TESBoundObject*>(magicKey), nullptr, 1, nullptr);
+				if (magicKey) SendCurseModEvent("QuestInteraction", "", player, "DeliveryReward");
 				PlayerMessage(Translator(Translation::QIDeliveryEnd, item_name, target_name));
 			}
 			else {

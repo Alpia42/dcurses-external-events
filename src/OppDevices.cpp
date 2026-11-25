@@ -8,6 +8,7 @@
 #include "Locations.h"
 #include "Tats.h"
 #include "Events.h"
+#include "ModEvents.h"
 #include "Translation.h"
 #include "Utils.h"
 #include "Serializer.h"
@@ -123,6 +124,7 @@ namespace DCURSES {
 		player->AsActorValueOwner()->ModActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kMagicka, -magic);
 
 		ScriptingManager().LockDevice(player, summoner_collar, true);
+		if (summoner_collar) SendCurseModEvent("Oppressive", containerName, player, "SummonerCollar");
 		if (!containerName.empty()) {
 			//PlayerMessage(fmt::format("As you touch the {} you feel very dizzy as a heavy collar forms around your neck and absorbs your magicka!", containerName));
 			PlayerMessage(Translator(Translation::ODeviceSummonerCollarStart, containerName), Settings::GetSingleton()->surpriseMode);
@@ -147,14 +149,9 @@ namespace DCURSES {
 		auto stamina = player->AsActorValueOwner()->GetActorValue(RE::ActorValue::kStamina);
 		player->AsActorValueOwner()->ModActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, RE::ActorValue::kStamina, -stamina / 2);
 
-		auto scriptManager = ScriptingManager();
-
-		if (Settings::GetSingleton()->oppLivingLatexOpen) {
-			scriptManager.LockDevice(player, latex_open, true);
-		}
-		else {
-			scriptManager.LockDevice(player, latex, true);
-		}
+		auto selectedSuit = Settings::GetSingleton()->oppLivingLatexOpen ? latex_open : latex;
+		ScriptingManager().LockDevice(player, selectedSuit, true);
+		if (selectedSuit) SendCurseModEvent("Oppressive", containerName, player, "LivingLatex");
 
 		if (!containerName.empty()) {
 			//PlayerMessage(fmt::format("As you touch the {} a ball of goo jumps out at you and covers your body!", containerName));
@@ -237,6 +234,7 @@ namespace DCURSES {
 		//Util::ExecuteWithDelay(1500ms, [player, dwarven] {
 		scriptManager.LockDevice(player, dwarven, true);
 		//});
+		if (dwarven) SendCurseModEvent("Oppressive", containerName, player, "DwarvenCuirass");
 
 		if (!containerName.empty()) {
 			PlayerMessage(Translator(Translation::ODeviceDwarvenCuirassStart, containerName), Settings::GetSingleton()->surpriseMode);
@@ -275,6 +273,7 @@ namespace DCURSES {
 
 		RE::TESObjectARMO* madness_plug = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(MADNESS_PLUG, "Devious Curses.esp");
 		scriptManager.LockDevice(player, madness_plug, true);
+		if (madness_plug) SendCurseModEvent("Oppressive", containerName, player, "MadnessPlug");
 
 		if (!containerName.empty()) {
 			PlayerMessage(Translator(Translation::ODeviceMadnessPlugStart, containerName), Settings::GetSingleton()->surpriseMode);
@@ -300,6 +299,7 @@ namespace DCURSES {
 
 		RE::TESObjectARMO* nocturnal_piercing = StaticDataHolder::GetSingleton()->LookupForm<RE::TESObjectARMO>(NOCTURNAL_PIERCING, "Devious Curses.esp");
 		scriptManager.LockDevice(player, nocturnal_piercing, true);
+		if (nocturnal_piercing) SendCurseModEvent("Oppressive", containerName, player, "NocturnalPiercing");
 
 		if (!containerName.empty()) {
 			PlayerMessage(Translator(Translation::ODeviceNocturnalPiercingStart, containerName), Settings::GetSingleton()->surpriseMode);

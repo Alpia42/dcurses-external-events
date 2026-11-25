@@ -3,6 +3,7 @@
 #include "Utils.h"
 #include "Scripting.h"
 #include "form_ids.h"
+#include "apis/JSON.hpp"
 
 using namespace SKSE;
 
@@ -154,5 +155,18 @@ namespace DCURSES {
 		modevent.PushForm(akActor);
 		modevent.PushString(otherEventData);
 		modevent.Send();
+
+		auto source = SKSE::GetModCallbackEventSource();
+		if (!source || !akActor || akActor->IsDeleted()) return;
+
+		const nlohmann::json payload{
+			{"curse", eventName},
+			{"source", eventSource},
+			{"detail", otherEventData},
+			{"status", "attempted"},
+		};
+		const auto text = payload.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
+		const SKSE::ModCallbackEvent event{"DCurses_EffectsApplied", text, 0.0f, akActor};
+		source->SendEvent(&event);
 	}
 }

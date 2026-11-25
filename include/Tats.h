@@ -19,6 +19,7 @@ namespace DCURSES {
 	bool CheckLewdMarksInstalled();
 
 	MARK GetLewdMark();
+	void CreditNudityDialogue();
 
 	int GetColorForMark(MARK mark);
 

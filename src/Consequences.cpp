@@ -511,10 +511,6 @@ namespace DCURSES {
 
 		bool actorIsGuard = ActorIsGuard(actor);
 
-		if (isNude && !settings->LMNuditySkipGagged || !isGagged && Serialized::GetLewdMarkCounters()->nudityCounter > 0) {
-			Serialized::GetLewdMarkCounters()->nudityCounter -= 1;
-		}
-
 		auto source = consequenceSource::kUnknown;
 		float chance = 0;
 		float guard_chance = settings->consGuardTalkMult;

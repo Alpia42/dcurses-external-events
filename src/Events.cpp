@@ -1054,6 +1054,7 @@ namespace DCURSES {
         }
 
         if (data.isTalking) {
+            CreditNudityDialogue();
             CheckConsequenceDialogue(actor);
             return;
         }
